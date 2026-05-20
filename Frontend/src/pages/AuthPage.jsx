@@ -38,17 +38,17 @@ const AuthPage = () => {
     setAuthError('');
   }, [isLogin, reset]);
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     setAuthError('');
     if (isLogin) {
-      const result = login(data.email, data.password);
+      const result = await login(data.email, data.password);
       if (result.success) {
         navigate('/cats');
       } else {
         setAuthError(result.message);
       }
     } else {
-      const result = signup(data.email, data.password);
+      const result = await signup(data.email, data.password);
       if (result.success) {
         navigate('/cats');
       } else {

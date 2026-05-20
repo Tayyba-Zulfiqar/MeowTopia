@@ -21,7 +21,8 @@ const ScrollToTop = () => {
 };
 
 const ProtectedRoute = ({ children }) => {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+  if (loading) return null; // Wait for token verification before redirecting
   if (!user) {
     return <Navigate to="/auth" />;
   }
