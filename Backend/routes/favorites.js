@@ -1,14 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const Favorite = require('../models/Favorite');
+const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 
 // GET /api/favorites — get all favorite cat IDs for the logged-in user
 router.get('/', protect, async (req, res) => {
   try {
-    const favorites = await Favorite.find({ user: req.user._id });
-    const catIds = favorites.map((f) => f.catId);
-    res.json({ catIds });
+    res.json({ catIds: req.user.favorites || [] });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch favorites' });
   }
@@ -18,11 +16,14 @@ router.get('/', protect, async (req, res) => {
 router.post('/:catId', protect, async (req, res) => {
   const catId = parseInt(req.params.catId);
   try {
-    const existing = await Favorite.findOne({ user: req.user._id, catId });
-    if (existing) {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (user.favorites.includes(catId)) {
       return res.status(409).json({ message: 'Cat is already in favorites' });
     }
-    await Favorite.create({ user: req.user._id, catId });
+    await User.findByIdAndUpdate(req.user._id, { $addToSet: { favorites: catId } });
     res.status(201).json({ message: 'Added to favorites', catId });
   } catch (error) {
     res.status(500).json({ message: 'Failed to add favorite' });
@@ -33,7 +34,7 @@ router.post('/:catId', protect, async (req, res) => {
 router.delete('/:catId', protect, async (req, res) => {
   const catId = parseInt(req.params.catId);
   try {
-    await Favorite.findOneAndDelete({ user: req.user._id, catId });
+    await User.findByIdAndUpdate(req.user._id, { $pull: { favorites: catId } });
     res.json({ message: 'Removed from favorites', catId });
   } catch (error) {
     res.status(500).json({ message: 'Failed to remove favorite' });
